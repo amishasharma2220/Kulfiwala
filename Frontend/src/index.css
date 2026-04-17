@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Nunito:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 38 50% 97%;
+    --foreground: 25 40% 12%;
+
+    --card: 38 40% 95%;
+    --card-foreground: 25 40% 12%;
+
+    --popover: 38 50% 97%;
+    --popover-foreground: 25 40% 12%;
+
+    --primary: 36 85% 50%;
+    --primary-foreground: 38 50% 97%;
+
+    --secondary: 140 30% 45%;
+    --secondary-foreground: 38 50% 97%;
+
+    --muted: 35 30% 90%;
+    --muted-foreground: 25 15% 45%;
+
+    --accent: 340 55% 55%;
+    --accent-foreground: 38 50% 97%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 35 25% 85%;
+    --input: 35 25% 85%;
+    --ring: 36 85% 50%;
+
+    --radius: 0.75rem;
+
+    --kulfi-cream: 40 60% 94%;
+    --kulfi-saffron: 36 85% 50%;
+    --kulfi-pistachio: 140 30% 45%;
+    --kulfi-rose: 340 55% 55%;
+    --kulfi-mango: 42 90% 55%;
+    --kulfi-brown: 25 40% 20%;
+
+    --gradient-hero: linear-gradient(135deg, hsl(36 85% 50%), hsl(42 90% 55%), hsl(340 55% 55%));
+    --gradient-warm: linear-gradient(135deg, hsl(36 85% 50% / 0.1), hsl(340 55% 55% / 0.1));
+
+    --shadow-warm: 0 4px 20px -4px hsl(36 85% 50% / 0.25);
+    --shadow-card: 0 2px 12px -2px hsl(25 40% 12% / 0.08);
+
+    --font-heading: 'Playfair Display', serif;
+    --font-body: 'Nunito', sans-serif;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+@layer components {
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  .gradient-warm {
+    background: var(--gradient-warm);
+  }
+  .shadow-warm {
+    box-shadow: var(--shadow-warm);
+  }
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+}
+
+@layer utilities {
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  .animate-float-slow {
+    animation: float 5s ease-in-out infinite;
+  }
+  .animate-fade-up {
+    animation: fadeUp 0.6s ease-out forwards;
+  }
+  .animate-scale-in {
+    animation: scaleIn 0.4s ease-out forwards;
+  }
+  .animate-kulfi-wiggle {
+    animation: kulfiWiggle 4s ease-in-out infinite;
+    transform-origin: 50% 90%;
+  }
+  .animate-kulfi-drip {
+    animation: kulfiDrip 2.5s ease-in-out infinite;
+    transform-origin: 50% 0%;
+  }
+  .animate-spin-slow {
+    animation: spin 18s linear infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes kulfiWiggle {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-12px) rotate(3deg); }
+}
+
+@keyframes kulfiDrip {
+  0%, 60%, 100% { transform: scaleY(0.4); opacity: 0.8; }
+  30% { transform: scaleY(1.4); opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
