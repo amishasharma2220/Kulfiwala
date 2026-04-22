@@ -11,6 +11,7 @@ import API from "@/api";
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -24,7 +25,11 @@ const LoginPage = () => {
     }
 
     try {
-      const { data } = await API.post("/api/auth/login", { email, password });
+      setLoading(true);
+      const { data } = await API.post("/api/auth/login", {
+        email: email.trim(),
+        password,
+      });
 
       // store user
       localStorage.setItem("user", JSON.stringify(data));
@@ -32,12 +37,19 @@ const LoginPage = () => {
       // update global auth state
       login(data);
 
-      toast({ title: `Welcome back, ${data.name}!` });
+      toast({ title: `Welcome back, ${data?.name || "User"}!` });
 
       navigate("/profile");
+      setLoading(false);
     } catch (error: any) {
+      setLoading(false);
+      console.error("LOGIN ERROR:", error);
+
       toast({
-        title: error.response?.data?.message || "Invalid credentials",
+        title:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Login failed. Please try again.",
         variant: "destructive",
       });
     }
@@ -61,8 +73,12 @@ const LoginPage = () => {
             <Label htmlFor="password" className="font-body text-sm font-semibold">Password</Label>
             <Input id="password" type="password" placeholder="••••••••" className="mt-1" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
-          <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body font-bold mt-2">
-            Log In
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body font-bold mt-2"
+          >
+            {loading ? "Logging in..." : "Log In"}
           </Button>
         </form>
 

@@ -15,6 +15,7 @@ const SignupPage = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -37,11 +38,12 @@ const SignupPage = () => {
     }
 
     try {
+      setLoading(true);
       const { data } = await API.post("/api/auth/signup", {
-        name,
-        email,
+        name: name.trim(),
+        email: email.trim(),
         password,
-        phone,
+        phone: phone.trim(),
       });
 
       // store user
@@ -52,13 +54,20 @@ const SignupPage = () => {
 
       toast({
         title: "Account created!",
-        description: `Welcome to Kulfiwala, ${data.name}!`,
+        description: `Welcome to Kulfiwala, ${data?.name || "User"}!`,
       });
 
       navigate("/profile");
+      setLoading(false);
     } catch (error: any) {
+      setLoading(false);
+      console.error("SIGNUP ERROR:", error);
+
       toast({
-        title: error.response?.data?.message || "Signup failed",
+        title:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Signup failed. Please try again.",
         variant: "destructive",
       });
     }
@@ -94,8 +103,12 @@ const SignupPage = () => {
             <Label htmlFor="confirm" className="font-body text-sm font-semibold">Confirm Password *</Label>
             <Input id="confirm" type="password" placeholder="Re-enter password" className="mt-1" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
           </div>
-          <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body font-bold mt-2">
-            Create Account
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body font-bold mt-2"
+          >
+            {loading ? "Creating account..." : "Create Account"}
           </Button>
         </form>
 
