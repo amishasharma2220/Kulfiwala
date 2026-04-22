@@ -16,28 +16,39 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://kulfiwala-seven.vercel.app",
-  "https://kulfiwala-lnu953no7-amishasharma2220s-projects.vercel.app"
+  process.env.FRONTEND_URL, // set this in Render to your Vercel URL
 ];
+
+// normalize and filter empty values
+const origins = allowedOrigins.filter(Boolean);
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin (like mobile apps, curl)
+      // allow requests with no origin (e.g., curl, Postman)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        return callback(new Error("Not allowed by CORS"));
-      }
+
+      // allow exact matches
+      if (origins.includes(origin)) return callback(null, true);
+
+      // allow all Vercel preview/production subdomains
+      if (origin.endsWith(".vercel.app")) return callback(null, true);
+
+      return callback(null, false); // block others silently
     },
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
 
 // handle preflight requests
-app.options("*", cors());
+app.options(
+  "*",
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use("/api/orders", orderRoutes);
 app.use("/api/auth", authRoutes);
