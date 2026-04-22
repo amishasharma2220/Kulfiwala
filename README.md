@@ -6,7 +6,7 @@ Kulfiwala is a full-stack web application where users can explore delicious kulf
 
 ## 🚀 Live Demo
 
-Frontend: kulfiwala-seven.vercel.app
+Frontend: https://kulfiwala-seven.vercel.app
 Backend: https://kulfiwala.onrender.com
 
 ---
