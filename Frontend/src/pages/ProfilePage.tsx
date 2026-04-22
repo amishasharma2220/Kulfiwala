@@ -31,11 +31,15 @@ const ProfilePage = () => {
 
         const { token } = JSON.parse(stored);
 
-        const res = await fetch("http://localhost:5001/api/orders/my", {
+        const API_URL = import.meta.env.VITE_API_URL || "https://kulfiwala.onrender.com";
+
+        const res = await fetch(`${API_URL}/api/orders/my`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
+
+        if (!res.ok) throw new Error("Failed to fetch orders");
 
         const data = await res.json();
         setOrders(data);
