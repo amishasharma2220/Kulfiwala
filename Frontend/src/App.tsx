@@ -8,7 +8,7 @@ import Footer from "@/components/Footer";
 import Index from "./pages/Index";
 import MenuPage from "./pages/MenuPage";
 import StoresPage from "./pages/StoresPage";
-import AboutPage from "./pages/AboutPage";
+import AboutPage from "./pages/Aboutpage";
 import ContactPage from "./pages/ContactPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
