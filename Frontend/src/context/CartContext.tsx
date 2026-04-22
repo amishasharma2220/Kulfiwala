@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 
 export interface CartItem {
-  id: string;
+  id?: string;
+  _id?: string;
   name: string;
   price: number;
   image: string;
@@ -10,7 +11,7 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, "quantity">) => void;
+  addItem: (item: any) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -26,11 +27,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [items, setItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  const addItem = useCallback((item: Omit<CartItem, "quantity">) => {
+  const addItem = useCallback((item: any) => {
     setItems((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
+      const existing = prev.find((i) => (i._id || i.id) === (item._id || item.id));
       if (existing) {
-        return prev.map((i) => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
+        return prev.map((i) => (i._id || i.id) === (item._id || item.id) ? { ...i, quantity: i.quantity + 1 } : i);
       }
       return [...prev, { ...item, quantity: 1 }];
     });
@@ -38,14 +39,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const removeItem = useCallback((id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
+    setItems((prev) => prev.filter((i) => (i._id || i.id) !== id));
   }, []);
 
   const updateQuantity = useCallback((id: string, quantity: number) => {
     if (quantity <= 0) {
-      setItems((prev) => prev.filter((i) => i.id !== id));
+      setItems((prev) => prev.filter((i) => (i._id || i.id) !== id));
     } else {
-      setItems((prev) => prev.map((i) => i.id === id ? { ...i, quantity } : i));
+      setItems((prev) => prev.map((i) => (i._id || i.id) === id ? { ...i, quantity } : i));
     }
   }, []);
 

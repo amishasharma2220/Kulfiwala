@@ -4,29 +4,43 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import logo from "@/assets/logo.png";
+import API from "@/api";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!email || !password) {
       toast({ title: "Please fill all fields", variant: "destructive" });
       return;
     }
-    const users = JSON.parse(localStorage.getItem("kulfiwala_users") || "[]");
-    const user = users.find((u: any) => u.email === email && u.password === password);
-    if (!user) {
-      toast({ title: "Invalid credentials", description: "Check your email and password", variant: "destructive" });
-      return;
+
+    try {
+      const { data } = await API.post("/api/auth/login", { email, password });
+
+      // store user
+      localStorage.setItem("user", JSON.stringify(data));
+
+      // update global auth state
+      login(data);
+
+      toast({ title: `Welcome back, ${data.name}!` });
+
+      navigate("/profile");
+    } catch (error: any) {
+      toast({
+        title: error.response?.data?.message || "Invalid credentials",
+        variant: "destructive",
+      });
     }
-    localStorage.setItem("kulfiwala_current_user", JSON.stringify(user));
-    toast({ title: `Welcome back, ${user.name}!` });
-    navigate("/profile");
   };
 
   return (

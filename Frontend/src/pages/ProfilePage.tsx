@@ -4,50 +4,70 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import { User, Mail, Phone, MapPin, Calendar, LogOut, Edit2, Check, Package, Clock, Star } from "lucide-react";
 
 const ProfilePage = () => {
-  const [user, setUser] = useState<any>(null);
+  const { user, updateUser, logout } = useAuth();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", address: "" });
+  const [orders, setOrders] = useState<any[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    const stored = localStorage.getItem("kulfiwala_current_user");
-    if (!stored) {
+    if (!user) {
       navigate("/login");
       return;
     }
-    const u = JSON.parse(stored);
-    setUser(u);
-    setForm({ name: u.name, phone: u.phone || "", address: u.address || "" });
-  }, [navigate]);
+    setForm({ name: user.name, phone: user.phone || "", address: user.address || "" });
+  }, [user, navigate]);
 
-  const handleSave = () => {
-    const updated = { ...user, ...form };
-    setUser(updated);
-    localStorage.setItem("kulfiwala_current_user", JSON.stringify(updated));
-    // Update in users list too
-    const users = JSON.parse(localStorage.getItem("kulfiwala_users") || "[]");
-    const idx = users.findIndex((u: any) => u.id === updated.id);
-    if (idx >= 0) {
-      users[idx] = updated;
-      localStorage.setItem("kulfiwala_users", JSON.stringify(users));
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const stored = localStorage.getItem("user");
+        if (!stored) return;
+
+        const { token } = JSON.parse(stored);
+
+        const res = await fetch("http://localhost:5001/api/orders/my", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await res.json();
+        setOrders(data);
+      } catch (error) {
+        console.error("Failed to fetch orders", error);
+      }
+    };
+
+    if (user) fetchOrders();
+  }, [user]);
+
+  const handleSave = async () => {
+    try {
+      await updateUser(form);
+      setEditing(false);
+      toast({ title: "Profile updated!" });
+    } catch (error) {
+      toast({ title: "Update failed", variant: "destructive" });
     }
-    setEditing(false);
-    toast({ title: "Profile updated!" });
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("kulfiwala_current_user");
+    logout();
     toast({ title: "Logged out successfully" });
     navigate("/login");
   };
 
   if (!user) return null;
 
-  const memberSince = new Date(user.createdAt).toLocaleDateString("en-IN", { year: "numeric", month: "long" });
+  const memberSince = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString("en-IN", { year: "numeric", month: "long" })
+    : "Recently";
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -128,32 +148,29 @@ const ProfilePage = () => {
             <Package className="h-5 w-5 text-primary" /> My Orders
           </h2>
           {(() => {
-            const orders = [
-              { id: "ORD-1001", date: "2026-04-10", items: ["Pista Kulfi x2", "Kesar Kulfi x1"], total: 250, status: "Delivered" },
-              { id: "ORD-1002", date: "2026-04-08", items: ["Mango Kulfi x3"], total: 285, status: "Delivered" },
-              { id: "ORD-1003", date: "2026-04-12", items: ["Rose Kulfi x1", "Malai Kulfi x2"], total: 235, status: "In Transit" },
-            ];
             const statusColor: Record<string, string> = {
               Delivered: "bg-secondary text-secondary-foreground",
-              "In Transit": "bg-primary/15 text-primary",
+              Processing: "bg-primary/15 text-primary",
+              Pending: "bg-primary/10 text-primary",
             };
+
             return (
               <div className="space-y-3">
                 {orders.map((order) => (
-                  <div key={order.id} className="border border-border rounded-xl p-4">
+                  <div key={order._id} className="border border-border rounded-xl p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-heading font-bold text-sm">{order.id}</span>
+                      <span className="font-heading font-bold text-sm">{order._id.slice(-6)}</span>
                       <span className={`text-xs font-bold px-3 py-1 rounded-full font-body ${statusColor[order.status]}`}>{order.status}</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground font-body mb-1">
-                      <Clock className="h-3 w-3" /> {order.date}
+                      <Clock className="h-3 w-3" /> {new Date(order.createdAt).toLocaleDateString()}
                     </div>
-                    <p className="text-xs font-body text-muted-foreground">{order.items.join(", ")}</p>
+                    <p className="text-xs font-body text-muted-foreground">{order.items.map((i: any) => `${i.name} x${i.quantity}`).join(", ")}</p>
                     <div className="flex items-center justify-between mt-2">
-                      <p className="text-sm font-heading font-bold text-primary">₹{order.total}</p>
+                      <p className="text-sm font-heading font-bold text-primary">₹{order.totalAmount}</p>
                       {order.status === "Delivered" && (
                         <Link
-                          to={`/review?order=${order.id}`}
+                          to={`/review?order=${order._id}`}
                           className="text-xs font-body font-semibold text-primary hover:underline flex items-center gap-1"
                         >
                           <Star className="h-3 w-3" /> Rate Order

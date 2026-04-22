@@ -1,15 +1,21 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import API from "@/api";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Star, ArrowLeft, Send } from "lucide-react";
 
 const ReviewPage = () => {
-  const [searchParams] = useSearchParams();
-  const orderId = searchParams.get("order") || "";
+  const location = useLocation();
+  const order = location.state?.order;
+  const orderId = order?.id || "";
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  if (!order) {
+    return <p className="text-center mt-10">No order found</p>;
+  }
 
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -17,7 +23,7 @@ const ReviewPage = () => {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("kulfiwala_current_user");
+    const stored = localStorage.getItem("user");
     if (!stored) {
       navigate("/login");
     }
@@ -36,36 +42,35 @@ const ReviewPage = () => {
     }
   }, [orderId]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (rating === 0) {
       toast({ title: "Please select a rating", variant: "destructive" });
       return;
     }
+
     if (review.trim().length < 5) {
       toast({ title: "Please write at least a short review", variant: "destructive" });
       return;
     }
 
-    const user = JSON.parse(localStorage.getItem("kulfiwala_current_user") || "{}");
-    const reviewData = {
-      orderId,
-      rating,
-      review: review.trim().slice(0, 1000),
-      userName: user.name,
-      date: new Date().toISOString(),
-    };
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-    const reviews = JSON.parse(localStorage.getItem("kulfiwala_reviews") || "[]");
-    const idx = reviews.findIndex((r: any) => r.orderId === orderId);
-    if (idx >= 0) {
-      reviews[idx] = reviewData;
-    } else {
-      reviews.push(reviewData);
+      await API.post("/api/reviews", {
+        orderId,
+        rating,
+        review,
+      });
+
+      setSubmitted(true);
+      toast({ title: "Review submitted successfully 🎉" });
+
+    } catch (error: any) {
+      toast({
+        title: error.response?.data?.message || "Failed to submit review",
+        variant: "destructive",
+      });
     }
-    localStorage.setItem("kulfiwala_reviews", JSON.stringify(reviews));
-
-    setSubmitted(true);
-    toast({ title: "Thank you for your review! 🎉" });
   };
 
   return (

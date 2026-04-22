@@ -1,23 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
 import { ShoppingCart, User, Menu, X, LogIn } from "lucide-react";
 import { useCart } from "@/context/CartContext";
-import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useState } from "react";
 import logo from "@/assets/logo.png";
 
 const Navbar = () => {
   const { totalItems, setIsCartOpen } = useCart();
+  const { isLoggedIn, user } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const check = () => setIsLoggedIn(!!localStorage.getItem("kulfiwala_current_user"));
-    check();
-    window.addEventListener("storage", check);
-    // Re-check on route change
-    check();
-    return () => window.removeEventListener("storage", check);
-  }, [location.pathname]);
 
   const links = [
     { to: "/", label: "Home" },
@@ -62,8 +54,9 @@ const Navbar = () => {
             )}
           </button>
           {isLoggedIn ? (
-            <Link to="/profile" className="p-2 rounded-full hover:bg-muted transition-colors bg-primary/10">
+            <Link to="/profile" className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-muted transition-colors bg-primary/10">
               <User className="h-5 w-5 text-primary" />
+              <span className="hidden sm:inline text-sm font-semibold text-primary max-w-[100px] truncate">{user?.name?.split(" ")[0]}</span>
             </Link>
           ) : (
             <Link to="/login" className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-primary-foreground font-body font-bold text-sm hover:bg-primary/90 transition-colors">
@@ -100,3 +93,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import API from "@/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,10 +11,25 @@ const ContactPage = () => {
   const { toast } = useToast();
   const [form, setForm] = useState({ name: "", email: "", message: "" });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({ title: "Message sent!", description: "We'll get back to you soon." });
-    setForm({ name: "", email: "", message: "" });
+
+    try {
+      await API.post("/api/contact", form);
+
+      toast({
+        title: "Message sent!",
+        description: "We'll get back to you soon.",
+      });
+
+      setForm({ name: "", email: "", message: "" });
+
+    } catch (error: any) {
+      toast({
+        title: error.response?.data?.message || "Failed to send message",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

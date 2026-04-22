@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 import logo from "@/assets/logo.png";
+import API from "@/api";
 
 const SignupPage = () => {
+  const { login } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -15,31 +18,50 @@ const SignupPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!name || !email || !password || !confirm) {
       toast({ title: "Please fill all required fields", variant: "destructive" });
       return;
     }
+
     if (password.length < 6) {
       toast({ title: "Password must be at least 6 characters", variant: "destructive" });
       return;
     }
+
     if (password !== confirm) {
       toast({ title: "Passwords don't match", variant: "destructive" });
       return;
     }
-    const users = JSON.parse(localStorage.getItem("kulfiwala_users") || "[]");
-    if (users.find((u: any) => u.email === email)) {
-      toast({ title: "Email already registered", variant: "destructive" });
-      return;
+
+    try {
+      const { data } = await API.post("/api/auth/signup", {
+        name,
+        email,
+        password,
+        phone,
+      });
+
+      // store user
+      localStorage.setItem("user", JSON.stringify(data));
+
+      // update global auth state
+      login(data);
+
+      toast({
+        title: "Account created!",
+        description: `Welcome to Kulfiwala, ${data.name}!`,
+      });
+
+      navigate("/profile");
+    } catch (error: any) {
+      toast({
+        title: error.response?.data?.message || "Signup failed",
+        variant: "destructive",
+      });
     }
-    const newUser = { id: Date.now().toString(), name, email, phone, password, avatar: "", address: "", createdAt: new Date().toISOString() };
-    users.push(newUser);
-    localStorage.setItem("kulfiwala_users", JSON.stringify(users));
-    localStorage.setItem("kulfiwala_current_user", JSON.stringify(newUser));
-    toast({ title: "Account created!", description: `Welcome to Kulfiwala, ${name}!` });
-    navigate("/profile");
   };
 
   return (
