@@ -14,7 +14,30 @@ connectDB();
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://kulfiwala-seven.vercel.app",
+  "https://kulfiwala-lnu953no7-amishasharma2220s-projects.vercel.app"
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // allow requests with no origin (like mobile apps, curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
+
+// handle preflight requests
+app.options("*", cors());
 app.use(express.json());
 app.use("/api/orders", orderRoutes);
 app.use("/api/auth", authRoutes);
