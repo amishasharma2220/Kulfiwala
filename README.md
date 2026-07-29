@@ -49,7 +49,7 @@ Deployment:
 ---
 
 ## 📂 Project Structure
-
+```
 Kulfiwala/
 │
 ├── Frontend/
@@ -67,6 +67,7 @@ Kulfiwala/
 └── README.md
 
 ---
+```
 
 ## ⚙️ Environment Variables
 
