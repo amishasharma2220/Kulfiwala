@@ -1,17 +1,17 @@
-# 🍨 Kulfiwala — Full Stack Dessert Ordering App
+#  Kulfiwala : Full Stack Dessert Ordering App
 
 Kulfiwala is a full-stack web application where users can explore delicious kulfi flavors, place orders, and manage their profile. The application is built using modern web technologies and deployed for real-world usage.
 
 ---
 
-## 🚀 Live Demo
+## Live Demo
 
 Frontend: https://kulfiwala-seven.vercel.app
 Backend: https://kulfiwala.onrender.com
 
 ---
 
-## 🧠 Features
+##  Features
 
 - User Authentication (Signup & Login with JWT)
 - Browse Kulfi Menu
@@ -24,7 +24,7 @@ Backend: https://kulfiwala.onrender.com
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 Frontend:
 - React (Vite)
@@ -48,7 +48,7 @@ Deployment:
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 ```
 Kulfiwala/
 │
@@ -69,7 +69,7 @@ Kulfiwala/
 ---
 ```
 
-## ⚙️ Environment Variables
+## Environment Variables
 
 Frontend (.env)
 VITE_API_URL=https://kulfiwala.onrender.com
@@ -82,7 +82,7 @@ FRONTEND_URL=https://your-vercel-app.vercel.app
 
 ---
 
-## 🧑‍💻 Installation & Setup (Local Development)
+##  Installation & Setup (Local Development)
 
 1. Clone the repository
 git clone https://github.com/amishasharma2220/Kulfiwala.git
@@ -100,24 +100,13 @@ npm run dev
 
 ---
 
-## 🔄 Application Flow
+##  Application Flow
 
 User → Signup/Login → Browse Products → Add to Cart → Checkout → Payment → Order Stored → View in Profile
 
 ---
 
-## 📸 Screenshots
-
-(Add screenshots here)
-- Home Page  
-- Menu Page  
-- Login / Signup  
-- Checkout Page  
-- Profile Page  
-
----
-
-## 🚀 Deployment
+##  Deployment
 
 Frontend (Vercel):
 - Connected GitHub repo
@@ -131,7 +120,7 @@ Backend (Render):
 
 ---
 
-## 📈 Future Improvements
+## Future Improvements
 
 - Razorpay Payment Integration  
 - Admin Dashboard  
@@ -141,13 +130,13 @@ Backend (Render):
 
 ---
 
-## 🙌 Author
+## Author
 
 Amisha Sharma  
 GitHub: https://github.com/amishasharma2220  
 
 ---
 
-## ⭐ Support
+## Support
 
 If you like this project, give it a star on GitHub!
