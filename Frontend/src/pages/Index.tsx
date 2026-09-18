@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Truck, Award, Clock, Heart, Leaf } from "lucide-react";
+import { ArrowRight, Truck, Award, Clock, Heart, Leaf, Star } from "lucide-react";
 import heroImg from "@/assets/hero-kulfi.jpg";
 import { products } from "@/data/products";
 import ProductCard from "@/components/ProductCard";
