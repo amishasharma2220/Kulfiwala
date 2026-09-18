@@ -34,6 +34,7 @@ const Navbar = () => {
             <Link
               key={l.to}
               to={l.to}
+              aria-current={isActive(l.to) ? "page" : undefined}
               className={`text-sm font-semibold transition-colors hover:text-primary ${isActive(l.to) ? "text-primary" : "text-muted-foreground"}`}
             >
               {l.label}
@@ -44,33 +45,39 @@ const Navbar = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsCartOpen(true)}
-            className="relative p-2 rounded-full hover:bg-muted transition-colors"
+            aria-label={`Open cart${totalItems > 0 ? `, ${totalItems} item${totalItems === 1 ? "" : "s"}` : ""}`}
+            className="relative p-2 rounded-full hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <ShoppingCart className="h-5 w-5 text-foreground" />
+            <ShoppingCart className="h-5 w-5 text-foreground" aria-hidden="true" />
             {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-scale-in">
+              <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-scale-in motion-reduce:animate-none">
                 {totalItems}
               </span>
             )}
           </button>
           {isLoggedIn ? (
             <Link to="/profile" className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-muted transition-colors bg-primary/10">
-              <User className="h-5 w-5 text-primary" />
+              <User className="h-5 w-5 text-primary" aria-hidden="true" />
               <span className="hidden sm:inline text-sm font-semibold text-primary max-w-[100px] truncate">{user?.name?.split(" ")[0]}</span>
             </Link>
           ) : (
             <Link to="/login" className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-primary-foreground font-body font-bold text-sm hover:bg-primary/90 transition-colors">
-              <LogIn className="h-4 w-4" /> Login
+              <LogIn className="h-4 w-4" aria-hidden="true" /> Login
             </Link>
           )}
-          <button className="md:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)}>
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          <button
+            className="md:hidden p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
           </button>
         </div>
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-border bg-background px-4 pb-4 animate-fade-up">
+        <div className="md:hidden border-t border-border bg-background px-4 pb-4 animate-fade-up motion-reduce:animate-none">
           {links.map((l) => (
             <Link
               key={l.to}

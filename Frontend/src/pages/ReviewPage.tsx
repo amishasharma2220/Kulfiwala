@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import API from "@/api";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,15 +7,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Star, ArrowLeft, Send } from "lucide-react";
 
 const ReviewPage = () => {
-  const location = useLocation();
-  const order = location.state?.order;
-  const orderId = order?.id || "";
+  const [searchParams] = useSearchParams();
+  const orderId = searchParams.get("order") || "";
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  if (!order) {
-    return <p className="text-center mt-10">No order found</p>;
-  }
 
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -29,7 +24,7 @@ const ReviewPage = () => {
     }
   }, [navigate]);
 
-  // Check if already reviewed
+  // Check if this order was already reviewed on this device
   useEffect(() => {
     if (orderId) {
       const reviews = JSON.parse(localStorage.getItem("kulfiwala_reviews") || "[]");
@@ -41,6 +36,18 @@ const ReviewPage = () => {
       }
     }
   }, [orderId]);
+
+  if (!orderId) {
+    return (
+      <div className="container mx-auto px-4 py-20 text-center">
+        <h2 className="font-heading text-2xl font-bold mb-2">No order selected</h2>
+        <p className="text-muted-foreground font-body mb-6">Rate an order from your order history.</p>
+        <Button onClick={() => navigate("/profile")} className="bg-primary text-primary-foreground hover:bg-primary/90">
+          Go to My Orders
+        </Button>
+      </div>
+    );
+  }
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -54,17 +61,18 @@ const ReviewPage = () => {
     }
 
     try {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-
       await API.post("/api/reviews", {
         orderId,
         rating,
         review,
       });
 
+      const reviews = JSON.parse(localStorage.getItem("kulfiwala_reviews") || "[]");
+      reviews.push({ orderId, rating, review });
+      localStorage.setItem("kulfiwala_reviews", JSON.stringify(reviews));
+
       setSubmitted(true);
       toast({ title: "Review submitted successfully 🎉" });
-
     } catch (error: any) {
       toast({
         title: error.response?.data?.message || "Failed to submit review",
@@ -88,11 +96,9 @@ const ReviewPage = () => {
           <h1 className="font-heading text-2xl font-bold mb-2">
             {submitted ? "Review Submitted!" : "Rate Your Order"}
           </h1>
-          {orderId && (
-            <p className="text-sm text-muted-foreground font-body mb-6">
-              Order: <span className="font-semibold text-foreground">{orderId}</span>
-            </p>
-          )}
+          <p className="text-sm text-muted-foreground font-body mb-6">
+            Order: <span className="font-semibold text-foreground">#{orderId.slice(-6)}</span>
+          </p>
 
           {/* Star Rating */}
           <div className="flex justify-center gap-2 mb-6">
@@ -104,6 +110,7 @@ const ReviewPage = () => {
                 onClick={() => setRating(star)}
                 onMouseEnter={() => !submitted && setHover(star)}
                 onMouseLeave={() => !submitted && setHover(0)}
+                aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
                 className="transition-transform hover:scale-110 disabled:cursor-default"
               >
                 <Star
@@ -134,6 +141,7 @@ const ReviewPage = () => {
             onChange={(e) => setReview(e.target.value)}
             disabled={submitted}
             maxLength={1000}
+            aria-label="Your review"
             className="min-h-[120px] font-body text-sm mb-2"
           />
           <p className="text-xs text-muted-foreground font-body text-right mb-6">

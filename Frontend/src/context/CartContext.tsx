@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 
 export interface CartItem {
   id?: string;
@@ -11,7 +11,7 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: any) => void;
+  addItem: (item: any, quantity?: number) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -23,17 +23,58 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const STORAGE_KEY = "kulfiwala_cart";
+
+const loadStoredCart = (): CartItem[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(loadStoredCart);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  const addItem = useCallback((item: any) => {
+  // Persist to localStorage whenever the cart changes, so a refresh
+  // (or accidental tab close) doesn't wipe out the customer's cart.
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch {
+      // Storage can fail in private-browsing/quota-exceeded situations —
+      // the cart still works in-memory for the session either way.
+    }
+  }, [items]);
+
+  // Keep the cart in sync across tabs (e.g. adding an item in one tab
+  // should be reflected if the user checks out from another).
+  useEffect(() => {
+    const sync = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) {
+        try {
+          setItems(e.newValue ? JSON.parse(e.newValue) : []);
+        } catch {
+          // ignore malformed cross-tab payloads
+        }
+      }
+    };
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+
+  const addItem = useCallback((item: any, quantity: number = 1) => {
     setItems((prev) => {
       const existing = prev.find((i) => (i._id || i.id) === (item._id || item.id));
       if (existing) {
-        return prev.map((i) => (i._id || i.id) === (item._id || item.id) ? { ...i, quantity: i.quantity + 1 } : i);
+        return prev.map((i) =>
+          (i._id || i.id) === (item._id || item.id) ? { ...i, quantity: i.quantity + quantity } : i
+        );
       }
-      return [...prev, { ...item, quantity: 1 }];
+      return [...prev, { ...item, quantity }];
     });
     setIsCartOpen(true);
   }, []);

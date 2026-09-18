@@ -28,9 +28,11 @@ const MenuPage = () => {
 
       {/* Search */}
       <div className="max-w-md mx-auto mb-8">
+        <label htmlFor="menu-search" className="sr-only">Search kulfis</label>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
           <input
+            id="menu-search"
             type="text"
             placeholder="Search kulfis..."
             value={search}
@@ -41,11 +43,12 @@ const MenuPage = () => {
       </div>
 
       {/* Category filters */}
-      <div className="flex flex-wrap justify-center gap-3 mb-10">
+      <div className="flex flex-wrap justify-center gap-3 mb-10" role="group" aria-label="Filter by category">
         {categories.map((c) => (
           <button
             key={c}
             onClick={() => setActive(c)}
+            aria-pressed={active === c}
             className={`px-5 py-2 rounded-full font-body font-semibold text-sm transition-colors ${
               active === c ? "bg-primary text-primary-foreground shadow-warm" : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
@@ -57,9 +60,11 @@ const MenuPage = () => {
 
       {/* Product grid */}
       {filtered.length > 0 ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto">
           {filtered.map((p) => (
-            <ProductCard key={p.id} product={p} />
+            <div key={p.id} className="animate-fade-up motion-reduce:animate-none">
+              <ProductCard product={p} />
+            </div>
           ))}
         </div>
       ) : (

@@ -22,9 +22,15 @@ const App = () => (
   <TooltipProvider>
     <CartProvider>
       <Toaster />
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-full focus:font-body focus:font-bold"
+      >
+        Skip to content
+      </a>
       <Navbar />
       <CartDrawer />
-      <main className="min-h-screen">
+      <main id="main-content" className="min-h-screen">
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/menu" element={<MenuPage />} />

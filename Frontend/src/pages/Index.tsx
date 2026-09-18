@@ -1,12 +1,15 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Star, Truck, Award, Clock, Heart, Leaf } from "lucide-react";
+import { ArrowRight, Truck, Award, Clock, Heart, Leaf } from "lucide-react";
 import heroImg from "@/assets/hero-kulfi.jpg";
 import { products } from "@/data/products";
 import ProductCard from "@/components/ProductCard";
+import HowItsMade from "@/components/HowItsMade";
+import Testimonials from "@/components/Testimonials";
 import { useAuth } from "@/context/AuthContext";
 
 const Index = () => {
-  const featured = products.slice(0, 3);
+  const badged = products.filter((p) => p.badge);
+  const featured = (badged.length >= 4 ? badged : products).slice(0, 6);
   const { user } = useAuth();
 
   return (
@@ -69,14 +72,17 @@ const Index = () => {
         </div>
       </section>
 
+      {/* How It's Made */}
+      <HowItsMade />
+
       {/* Featured Products */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-10">
             <h2 className="font-heading text-3xl md:text-4xl font-bold">Our <span className="text-primary">Bestsellers</span></h2>
-            <p className="text-muted-foreground font-body mt-2">Loved by millions across India</p>
+            <p className="text-muted-foreground font-body mt-2">Customer favourites from our menu</p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto">
             {featured.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
@@ -86,7 +92,7 @@ const Index = () => {
               to="/menu"
               className="inline-flex items-center gap-2 text-primary font-body font-bold hover:underline"
             >
-              View Full Menu <ArrowRight className="h-4 w-4" />
+              View Full Menu <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
         </div>
@@ -96,23 +102,7 @@ const Index = () => {
       <section className="py-16 gradient-warm">
         <div className="container mx-auto px-4">
           <h2 className="font-heading text-3xl font-bold text-center mb-10">What Our <span className="text-primary">Customers</span> Say</h2>
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {[
-              { name: "Priya Sharma", text: "The best kulfi I've ever had! Takes me back to my grandmother's kitchen.", rating: 5 },
-              { name: "Rahul Verma", text: "Kesar kulfi is absolutely divine. Ordering every weekend now!", rating: 5 },
-              { name: "Anita Patel", text: "Fresh, authentic, and delivered so fast. Love the mango kulfi!", rating: 5 },
-            ].map((t, i) => (
-              <div key={i} className="bg-card rounded-xl p-6 shadow-card">
-                <div className="flex gap-1 mb-3">
-                  {Array.from({ length: t.rating }).map((_, j) => (
-                    <Star key={j} className="h-4 w-4 fill-kulfi-mango text-kulfi-mango" />
-                  ))}
-                </div>
-                <p className="text-sm font-body text-muted-foreground mb-4">"{t.text}"</p>
-                <p className="font-heading font-bold text-sm">{t.name}</p>
-              </div>
-            ))}
-          </div>
+          <Testimonials count={3} />
         </div>
       </section>
 

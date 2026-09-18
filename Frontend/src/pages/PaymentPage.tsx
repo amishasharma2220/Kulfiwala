@@ -20,6 +20,13 @@ const PaymentPage = () => {
 
   const user = JSON.parse(localStorage.getItem("user") || "null");
 
+  const [method, setMethod] = useState<Method>("card");
+  const [card, setCard] = useState({ number: "", name: "", expiry: "", cvv: "" });
+  const [upi, setUpi] = useState("");
+  const [processing, setProcessing] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
+
   useEffect(() => {
     if (!user) {
       navigate("/login");
@@ -27,12 +34,6 @@ const PaymentPage = () => {
   }, [user, navigate]);
 
   if (!user) return null;
-
-  const [method, setMethod] = useState<Method>("card");
-  const [card, setCard] = useState({ number: "", name: "", expiry: "", cvv: "" });
-  const [upi, setUpi] = useState("");
-  const [processing, setProcessing] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,8 +44,6 @@ const PaymentPage = () => {
       setProcessing(false);
       return;
     }
-
-    console.log("USER:", user);
 
     if (!user?.token) {
       toast.error("User not authenticated");
@@ -61,7 +60,7 @@ const PaymentPage = () => {
 
       // ✅ If Cash on Delivery, skip payment delay and directly create order
       if (method === "cod") {
-        await API.post(
+        const res = await API.post(
           "/api/orders",
           {
             items: formattedItems,
@@ -76,6 +75,7 @@ const PaymentPage = () => {
         );
 
         setProcessing(false);
+        setOrderId(res.data?._id ?? null);
         clearCart();
         toast.success("Order placed successfully!");
         setSuccess(true);
@@ -97,19 +97,17 @@ const PaymentPage = () => {
         }
       );
 
-      console.log("ORDER RESPONSE:", res.data);
-
       // simulate processing delay for better UX
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       setProcessing(false);
+      setOrderId(res.data?._id ?? null);
       clearCart();
       toast.success("Payment successful!");
       setSuccess(true);
 
     } catch (error: any) {
       setProcessing(false);
-      console.error("PAYMENT ERROR:", error);
 
       toast.error(
         error?.response?.data?.message ||
@@ -129,7 +127,11 @@ const PaymentPage = () => {
             Thank you for your order. Your kulfi will be delivered soon.
           </p>
           <p className="font-body text-sm mb-6">
-            Order ID: <span className="font-bold text-primary">#{Math.floor(Math.random() * 100000)}</span>
+            {orderId ? (
+              <>Order ID: <span className="font-bold text-primary">#{orderId.slice(-6).toUpperCase()}</span></>
+            ) : (
+              "Your order has been recorded."
+            )}
           </p>
           <div className="flex flex-col gap-2">
             <Link to="/profile">

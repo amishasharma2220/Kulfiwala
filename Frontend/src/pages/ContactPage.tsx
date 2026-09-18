@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Phone, MapPin, Send, Star, Quote } from "lucide-react";
+import { Mail, Phone, MapPin, Send } from "lucide-react";
+import Testimonials from "@/components/Testimonials";
 
 const ContactPage = () => {
   const { toast } = useToast();
@@ -88,38 +89,7 @@ const ContactPage = () => {
         <h2 className="font-heading text-2xl md:text-3xl font-bold text-center mb-8">
           What Our <span className="text-primary">Customers</span> Say
         </h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[
-            { name: "Priya Sharma", location: "Delhi", text: "The best kulfi I've ever had! Takes me back to my grandmother's kitchen. Absolutely authentic taste.", rating: 5, avatar: "PS" },
-            { name: "Rahul Verma", location: "Mumbai", text: "Kesar kulfi is absolutely divine. We order every weekend for the whole family now!", rating: 5, avatar: "RV" },
-            { name: "Anita Patel", location: "Ahmedabad", text: "Fresh, authentic, and delivered so fast. The mango kulfi is our kids' favourite!", rating: 5, avatar: "AP" },
-            { name: "Vikram Singh", location: "Jaipur", text: "Tried the Paan kulfi — mind-blowing flavour! Nothing like this anywhere else.", rating: 5, avatar: "VS" },
-            { name: "Meera Iyer", location: "Bangalore", text: "Ordered the Dry Fruit Royal for a party. Every guest was asking where I got it from!", rating: 5, avatar: "MI" },
-            { name: "Arjun Kapoor", location: "Pune", text: "The Gulkand kulfi is a work of art. So creamy and the rose flavour is perfect.", rating: 4, avatar: "AK" },
-          ].map((t, i) => (
-            <div key={i} className="bg-card rounded-2xl p-6 shadow-card relative group hover:shadow-lg transition-shadow">
-              <Quote className="absolute top-4 right-4 h-6 w-6 text-primary/10 group-hover:text-primary/20 transition-colors" />
-              <div className="flex gap-1 mb-3">
-                {Array.from({ length: t.rating }).map((_, j) => (
-                  <Star key={j} className="h-4 w-4 fill-kulfi-mango text-kulfi-mango" />
-                ))}
-                {Array.from({ length: 5 - t.rating }).map((_, j) => (
-                  <Star key={j} className="h-4 w-4 text-muted" />
-                ))}
-              </div>
-              <p className="text-sm font-body text-muted-foreground mb-4 leading-relaxed">"{t.text}"</p>
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-heading font-bold text-xs">
-                  {t.avatar}
-                </div>
-                <div>
-                  <p className="font-heading font-bold text-sm">{t.name}</p>
-                  <p className="text-xs text-muted-foreground font-body">{t.location}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <Testimonials variant="detailed" />
       </section>
     </div>
   );

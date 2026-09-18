@@ -7,8 +7,6 @@ const router = express.Router();
 // CREATE ORDER
 router.post("/", protect, async (req, res) => {
   try {
-    console.log("REQUEST BODY:", req.body);
-    console.log("USER:", req.user);
     if (!req.user || !req.user._id) {
       return res.status(401).json({ message: "User not authorized" });
     }
