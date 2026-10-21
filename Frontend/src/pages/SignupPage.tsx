@@ -46,10 +46,7 @@ const SignupPage = () => {
         phone: phone.trim(),
       });
 
-      // store user
-      localStorage.setItem("user", JSON.stringify(data));
-
-      // update global auth state
+      // store user + update global auth state
       login(data);
 
       toast({

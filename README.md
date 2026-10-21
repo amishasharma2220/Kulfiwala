@@ -1,141 +1,118 @@
-#  Kulfiwala : Full Stack Dessert Ordering App
+# Kulfiwala : Full Stack Kulfi Ordering App
 
-Kulfiwala is a full-stack web application where users can explore delicious kulfi flavors, place orders, and manage their profile. The application is built using modern web technologies and deployed for real-world usage.
-
----
+Kulfiwala is a full-stack MERN web app where users browse 18 kulfi flavours, add them to a cart, check out with a saved delivery address, and track and review their orders.
 
 ## Live Demo
 
-Frontend: https://kulfiwala-seven.vercel.app
-Backend: https://kulfiwala.onrender.com
+- Frontend: https://kulfiwala-seven.vercel.app
+- Backend API: https://kulfiwala.onrender.com
 
----
+> Payments are **simulated** — this is a portfolio project and no real money is taken.
 
-##  Features
+## Features
 
-- User Authentication (Signup & Login with JWT)
-- Browse Kulfi Menu
-- Add to Cart
-- Checkout & Payment Flow
-- Order Placement & Storage in Database
-- User Profile with Order History
-- Protected Routes (only accessible after login)
-- Fully deployed (Frontend + Backend)
+- **Auth** — signup and login with JWT; passwords hashed with bcrypt
+- **Menu and cart** — filter by category, product detail modal, cart saved across refreshes and synced across tabs
+- **Checkout** — pick a saved address or enter a new one; the order is stored with its delivery address
+- **Server-side pricing** — the client sends only product IDs and quantities; the API looks up prices in MongoDB and calculates the total, so prices can't be tampered with from the browser
+- **Profile** — edit details, manage multiple saved addresses with a default
+- **Order history** — `/orders` page plus a summary on the profile
+- **Reviews** — rate your own orders (1–5 stars), one review per order, enforced on the server
+- **Contact form** — messages stored in MongoDB
 
----
+## Tech Stack
 
-##  Tech Stack
+| Layer | Tech |
+|---|---|
+| Frontend | React (Vite), TypeScript, Tailwind CSS, shadcn/ui, React Router, Axios |
+| Backend | Node.js, Express, Mongoose |
+| Database | MongoDB Atlas |
+| Auth | JWT, bcryptjs |
+| Deployment | Vercel (frontend), Render (backend) |
 
-Frontend:
-- React (Vite)
-- TypeScript
-- Tailwind CSS
-- Axios
-- React Router
+## Project Structure
 
-Backend:
-- Node.js
-- Express.js
-- MongoDB Atlas
-- Mongoose
-- JWT Authentication
-- bcrypt (password hashing)
-
-Deployment:
-- Frontend: Vercel
-- Backend: Render
-- Database: MongoDB Atlas
-
----
-
-##  Project Structure
 ```
 Kulfiwala/
-│
 ├── Frontend/
-│   ├── src/
-│   ├── components/
-│   ├── pages/
-│   └── context/
-│
-├── backend/
-│   ├── routes/
-│   ├── models/
-│   ├── middleware/
-│   └── config/
-│
-└── README.md
-
----
+│   └── src/
+│       ├── components/     # Navbar, CartDrawer, ProductCard, shadcn ui
+│       ├── context/        # AuthContext, CartContext
+│       ├── pages/          # Menu, Checkout, Payment, Profile, Orders, Review…
+│       ├── services/       # API calls
+│       └── data/           # product display data and images
+└── backend/
+    ├── config/             # MongoDB connection
+    ├── data/               # product catalog (source of truth for prices)
+    ├── middleware/         # JWT auth (protect)
+    ├── models/             # User, Product, Order, Review, Contact
+    ├── routes/             # auth, products, orders, users, reviews, contact
+    └── utils/              # token generation, product seeding
 ```
+
+## API Overview
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/auth/signup` | – | Create account |
+| POST | `/api/auth/login` | – | Log in, returns JWT |
+| GET | `/api/products` | – | List products |
+| POST | `/api/orders` | Yes | Place order (`items: [{ productId, quantity }]`, `paymentMethod`, `shippingAddress`) |
+| GET | `/api/orders/my` | Yes | Current user's orders |
+| GET / PUT | `/api/users/me` | Yes | Get / update profile |
+| POST / PUT / DELETE | `/api/users/me/addresses[/:id]` | Yes | Manage saved addresses |
+| GET | `/api/reviews/order/:orderId` | Yes | Your review for an order |
+| POST | `/api/reviews` | Yes | Review one of your orders |
+| POST | `/api/contact` | – | Send a contact message |
 
 ## Environment Variables
 
-Frontend (.env)
-VITE_API_URL=https://kulfiwala.onrender.com
-
-Backend (.env)
+**backend/.env**
+```
 PORT=5001
 MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_secret_key
-FRONTEND_URL=https://your-vercel-app.vercel.app
+JWT_SECRET=a_long_random_secret
+FRONTEND_URL=https://your-app.vercel.app   # comma-separate multiple URLs
+```
 
----
+**Frontend/.env**
+```
+VITE_API_URL=http://localhost:5001
+```
 
-##  Installation & Setup (Local Development)
+Never commit `.env` files — they are git-ignored.
 
-1. Clone the repository
+## Local Setup
+
+```bash
 git clone https://github.com/amishasharma2220/Kulfiwala.git
 cd Kulfiwala
 
-2. Setup Backend
+# Backend
 cd backend
 npm install
-npm run dev
+npm run dev        # http://localhost:5001 — products are seeded automatically on start
 
-3. Setup Frontend
+# Frontend (new terminal)
 cd Frontend
 npm install
-npm run dev
+npm run dev        # http://localhost:3000
+```
 
----
+## Application Flow
 
-##  Application Flow
-
-User → Signup/Login → Browse Products → Add to Cart → Checkout → Payment → Order Stored → View in Profile
-
----
-
-##  Deployment
-
-Frontend (Vercel):
-- Connected GitHub repo
-- Root directory set to "Frontend"
-- Added environment variable VITE_API_URL
-
-Backend (Render):
-- Node service
-- Connected MongoDB Atlas
-- Configured CORS and environment variables
-
----
+Signup/Login → Browse Menu → Add to Cart → Checkout (choose address) → Simulated Payment → Order saved → View in Orders → Rate Order
 
 ## Future Improvements
 
-- Razorpay Payment Integration  
-- Admin Dashboard  
-- Product Reviews & Ratings  
-- Mobile Responsiveness Improvements  
-- Notifications (Order updates)
-
----
+- Razorpay test-mode payment integration
+- Admin dashboard to manage products and update order status
+- Order status notifications
+- Automated tests for the API
 
 ## Author
 
-Amisha Sharma  
-GitHub: https://github.com/amishasharma2220  
-
----
+**Amisha Sharma** — [GitHub](https://github.com/amishasharma2220) · [LinkedIn](https://linkedin.com/in/amishasharma2220)
 
 ## Support
 

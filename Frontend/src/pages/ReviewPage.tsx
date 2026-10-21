@@ -17,24 +17,32 @@ const ReviewPage = () => {
   const [review, setReview] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (!stored) {
+    if (!localStorage.getItem("user")) {
       navigate("/login");
     }
   }, [navigate]);
 
-  // Check if this order was already reviewed on this device
+  // Load an existing review for this order from the server
   useEffect(() => {
-    if (orderId) {
-      const reviews = JSON.parse(localStorage.getItem("kulfiwala_reviews") || "[]");
-      const existing = reviews.find((r: any) => r.orderId === orderId);
-      if (existing) {
-        setRating(existing.rating);
-        setReview(existing.review);
-        setSubmitted(true);
-      }
+    if (!orderId) {
+      setLoading(false);
+      return;
     }
+    API.get(`/api/reviews/order/${orderId}`)
+      .then(({ data }) => {
+        if (data) {
+          setRating(data.rating);
+          setReview(data.review);
+          setSubmitted(true);
+        }
+      })
+      .catch(() => {
+        // if the lookup fails, the user can still try to submit
+      })
+      .finally(() => setLoading(false));
   }, [orderId]);
 
   if (!orderId) {
@@ -64,12 +72,8 @@ const ReviewPage = () => {
       await API.post("/api/reviews", {
         orderId,
         rating,
-        review,
+        review: review.trim(),
       });
-
-      const reviews = JSON.parse(localStorage.getItem("kulfiwala_reviews") || "[]");
-      reviews.push({ orderId, rating, review });
-      localStorage.setItem("kulfiwala_reviews", JSON.stringify(reviews));
 
       setSubmitted(true);
       toast({ title: "Review submitted successfully 🎉" });
@@ -148,7 +152,7 @@ const ReviewPage = () => {
             {review.length}/1000
           </p>
 
-          {!submitted ? (
+          {loading ? null : !submitted ? (
             <Button
               onClick={handleSubmit}
               className="w-full font-body font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90"

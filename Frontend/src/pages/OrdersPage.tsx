@@ -28,10 +28,7 @@ const OrdersPage = () => {
     const fetchOrders = async () => {
       setState("loading");
       try {
-        const stored = JSON.parse(localStorage.getItem("user") || "null");
-        const { data } = await API.get("/api/orders/my", {
-          headers: stored?.token ? { Authorization: `Bearer ${stored.token}` } : {},
-        });
+        const { data } = await API.get("/api/orders/my");
         if (cancelled) return;
         setOrders(Array.isArray(data) ? data : []);
         setState("success");
@@ -113,14 +110,12 @@ const OrdersPage = () => {
               </p>
               <div className="flex items-center justify-between mt-2">
                 <p className="text-lg font-heading font-bold text-primary">₹{order.totalAmount}</p>
-                {order.status === "Delivered" && (
-                  <Link
-                    to={`/review?order=${order._id}`}
-                    className="text-xs font-body font-semibold text-primary hover:underline"
+                <Link
+                  to={`/review?order=${order._id}`}
+                  className="text-xs font-body font-semibold text-primary hover:underline"
                   >
-                    Rate Order
-                  </Link>
-                )}
+                Rate Order
+                </Link>
               </div>
             </div>
           ))}

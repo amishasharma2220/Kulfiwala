@@ -1,123 +1,66 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useCart } from "@/context/CartContext";
-import { toast } from "sonner";
-import { ArrowLeft, CreditCard, Wallet, Banknote, CheckCircle2, Lock } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, CreditCard, Wallet, Banknote, CheckCircle2, Info } from "lucide-react";
 import API from "@/api";
+import { DELIVERY_FEE, type ShippingDetails } from "@/lib/checkout";
 
 type Method = "card" | "upi" | "cod";
 
 const PaymentPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { clearCart, totalPrice, items: cartItems } = useCart();
-  const state = location.state as { total?: number; items?: any[] };
-  const items = state?.items ?? cartItems;
-  const total = state?.total ?? totalPrice + 40;
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { clearCart, totalPrice, items } = useCart();
+  const shipping = (location.state as { shipping?: ShippingDetails } | null)?.shipping;
 
-  const user = JSON.parse(localStorage.getItem("user") || "null");
-
-  const [method, setMethod] = useState<Method>("card");
-  const [card, setCard] = useState({ number: "", name: "", expiry: "", cvv: "" });
-  const [upi, setUpi] = useState("");
+  const [method, setMethod] = useState<Method>("upi");
   const [processing, setProcessing] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [orderId, setOrderId] = useState<string | null>(null);
+  const [placedOrder, setPlacedOrder] = useState<{ _id: string; totalAmount: number } | null>(null);
+
+  // Estimate shown before placing the order; the server calculates the real total.
+  const estimatedTotal = totalPrice + DELIVERY_FEE;
 
   useEffect(() => {
-    if (!user) {
-      navigate("/login");
-    }
-  }, [user, navigate]);
-
-  if (!user) return null;
+    if (placedOrder) return;
+    if (!user) navigate("/login");
+    else if (!shipping || items.length === 0) navigate("/checkout");
+  }, [user, shipping, items.length, placedOrder, navigate]);
 
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!shipping || items.length === 0) return;
     setProcessing(true);
 
-    if (!items || items.length === 0) {
-      toast.error("Your cart is empty");
-      setProcessing(false);
-      return;
-    }
-
-    if (!user?.token) {
-      toast.error("User not authenticated");
-      setProcessing(false);
-      return;
-    }
-
     try {
-      const formattedItems = items.map((item: any) => ({
-        name: item.name || item.title || "Item",
-        price: Number(item.price) || 0,
-        quantity: Number(item.quantity || item.qty || 1),
-      }));
+      // Only product ids and quantities are sent — the server looks up prices.
+      const { data } = await API.post("/api/orders", {
+        items: items.map((item) => ({
+          productId: item.id || item._id,
+          quantity: item.quantity,
+        })),
+        paymentMethod: method,
+        shippingAddress: shipping,
+      });
 
-      // ✅ If Cash on Delivery, skip payment delay and directly create order
-      if (method === "cod") {
-        const res = await API.post(
-          "/api/orders",
-          {
-            items: formattedItems,
-            totalAmount: total,
-            paymentMethod: method,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${user.token}`,
-            },
-          }
-        );
-
-        setProcessing(false);
-        setOrderId(res.data?._id ?? null);
-        clearCart();
-        toast.success("Order placed successfully!");
-        setSuccess(true);
-        return;
-      }
-
-      // create order in backend (card / upi)
-      const res = await API.post(
-        "/api/orders",
-        {
-          items: formattedItems,
-          totalAmount: total,
-          paymentMethod: method,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        }
-      );
-
-      // simulate processing delay for better UX
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      setProcessing(false);
-      setOrderId(res.data?._id ?? null);
+      setPlacedOrder(data);
       clearCart();
-      toast.success("Payment successful!");
-      setSuccess(true);
-
+      toast({ title: "Order placed successfully!" });
     } catch (error: any) {
+      toast({
+        title: error?.response?.data?.message || error?.message || "Could not place order",
+        variant: "destructive",
+      });
+    } finally {
       setProcessing(false);
-
-      toast.error(
-        error?.response?.data?.message ||
-        error?.message ||
-        "Payment failed"
-      );
     }
   };
 
-  if (success) {
+  if (placedOrder) {
     return (
       <div className="container mx-auto px-4 py-20 max-w-md text-center">
         <div className="bg-card rounded-xl p-8 shadow-card">
@@ -126,15 +69,14 @@ const PaymentPage = () => {
           <p className="text-muted-foreground font-body mb-6">
             Thank you for your order. Your kulfi will be delivered soon.
           </p>
+          <p className="font-body text-sm mb-1">
+            Order ID: <span className="font-bold text-primary">#{placedOrder._id.slice(-6).toUpperCase()}</span>
+          </p>
           <p className="font-body text-sm mb-6">
-            {orderId ? (
-              <>Order ID: <span className="font-bold text-primary">#{orderId.slice(-6).toUpperCase()}</span></>
-            ) : (
-              "Your order has been recorded."
-            )}
+            Total: <span className="font-bold">₹{placedOrder.totalAmount}</span>
           </p>
           <div className="flex flex-col gap-2">
-            <Link to="/profile">
+            <Link to="/orders">
               <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">View Orders</Button>
             </Link>
             <Link to="/menu">
@@ -146,30 +88,38 @@ const PaymentPage = () => {
     );
   }
 
+  if (!user || !shipping) return null;
+
   return (
     <div className="container mx-auto px-4 py-10 max-w-3xl">
       <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted-foreground hover:text-primary mb-6 font-body text-sm">
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
 
-      <h1 className="font-heading text-3xl md:text-4xl font-extrabold mb-2">Payment</h1>
-      <p className="text-muted-foreground font-body mb-8 flex items-center gap-2">
-        <Lock className="h-4 w-4" /> Secure checkout — your information is protected.
-      </p>
+      <h1 className="font-heading text-3xl md:text-4xl font-extrabold mb-4">Payment</h1>
+
+      <div className="flex gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4 mb-8 font-body text-sm">
+        <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
+        <p>
+          <span className="font-bold">Demo checkout.</span> This is a portfolio project — no real payment is
+          taken and no card or UPI details are collected. Your order is saved so you can see it in your order history.
+        </p>
+      </div>
 
       <div className="bg-card rounded-xl p-6 shadow-card space-y-6">
         <div>
           <h2 className="font-heading text-lg font-bold mb-3">Select Payment Method</h2>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { id: "card" as Method, label: "Card", icon: CreditCard },
               { id: "upi" as Method, label: "UPI", icon: Wallet },
+              { id: "card" as Method, label: "Card", icon: CreditCard },
               { id: "cod" as Method, label: "Cash", icon: Banknote },
             ].map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => setMethod(id)}
+                aria-pressed={method === id}
                 className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors font-body font-semibold ${
                   method === id
                     ? "border-primary bg-primary/10 text-primary"
@@ -183,54 +133,26 @@ const PaymentPage = () => {
           </div>
         </div>
 
+        <div className="bg-muted/50 rounded-lg p-4 font-body text-sm">
+          <p className="font-semibold mb-1">Delivering to {shipping.fullName}</p>
+          <p className="text-muted-foreground">
+            {shipping.line}, {shipping.city}{shipping.state ? `, ${shipping.state}` : ""} {shipping.pincode}
+          </p>
+        </div>
+
         <form onSubmit={handlePay} className="space-y-4">
-          {method === "card" && (
-            <>
-              <div>
-                <Label htmlFor="number">Card Number</Label>
-                <Input id="number" required placeholder="1234 5678 9012 3456" maxLength={19}
-                  value={card.number} onChange={(e) => setCard({ ...card, number: e.target.value })} className="mt-1.5" />
-              </div>
-              <div>
-                <Label htmlFor="cardname">Name on Card</Label>
-                <Input id="cardname" required value={card.name} onChange={(e) => setCard({ ...card, name: e.target.value })} className="mt-1.5" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="expiry">Expiry</Label>
-                  <Input id="expiry" required placeholder="MM/YY" maxLength={5}
-                    value={card.expiry} onChange={(e) => setCard({ ...card, expiry: e.target.value })} className="mt-1.5" />
-                </div>
-                <div>
-                  <Label htmlFor="cvv">CVV</Label>
-                  <Input id="cvv" required type="password" maxLength={4}
-                    value={card.cvv} onChange={(e) => setCard({ ...card, cvv: e.target.value })} className="mt-1.5" />
-                </div>
-              </div>
-            </>
-          )}
-
-          {method === "upi" && (
-            <div>
-              <Label htmlFor="upi">UPI ID</Label>
-              <Input id="upi" required placeholder="yourname@upi" value={upi} onChange={(e) => setUpi(e.target.value)} className="mt-1.5" />
-            </div>
-          )}
-
-          {method === "cod" && (
-            <div className="bg-muted/50 rounded-lg p-4 font-body text-sm">
-              Pay with cash when your order arrives at your doorstep.
-            </div>
-          )}
-
           <div className="border-t border-border pt-4 flex justify-between items-center">
             <span className="font-heading text-lg font-bold">Amount to Pay</span>
-            <span className="font-heading text-2xl font-extrabold text-primary">₹{total}</span>
+            <span className="font-heading text-2xl font-extrabold text-primary">₹{estimatedTotal}</span>
           </div>
 
           <Button type="submit" disabled={processing}
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-body font-bold h-12">
-            {processing ? "Processing..." : method === "cod" ? "Place Order" : `Pay ₹${total}`}
+            {processing
+              ? "Placing order..."
+              : method === "cod"
+                ? "Place Order (Pay on Delivery)"
+                : `Place Order — Simulated ${method === "upi" ? "UPI" : "Card"} Payment`}
           </Button>
         </form>
       </div>

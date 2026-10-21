@@ -3,57 +3,73 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/AuthContext";
-import { User, Mail, Phone, MapPin, Calendar, LogOut, Edit2, Check, Package, Clock, Star } from "lucide-react";
+import { useAuth, Address } from "@/context/AuthContext";
+import {
+  User, Mail, Phone, Calendar, LogOut, Edit2, Check,
+  Package, Clock, Star, MapPin, Plus, Trash2, CheckCircle,
+} from "lucide-react";
+import API from "@/api";
+import { getMyProfile, updateMyProfile, addAddress, editAddress, deleteAddress } from "@/services/userService";
+
+const emptyAddressForm = { label: "Home", line: "", city: "", state: "", pincode: "" };
 
 const ProfilePage = () => {
   const { user, updateUser, logout } = useAuth();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", address: "" });
+  const [form, setForm] = useState({ name: "", phone: "" });
   const [orders, setOrders] = useState<any[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const [addressDialogOpen, setAddressDialogOpen] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [addressForm, setAddressForm] = useState(emptyAddressForm);
 
   useEffect(() => {
     if (!user) {
       navigate("/login");
       return;
     }
-    setForm({ name: user.name, phone: user.phone || "", address: user.address || "" });
+    setForm({ name: user.name, phone: user.phone || "" });
   }, [user, navigate]);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await getMyProfile();
+        updateUser({ phone: res.data.phone, addresses: res.data.addresses });
+      } catch (error) {
+        console.error("Failed to load profile", error);
+      }
+    };
+    if (user) loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const stored = localStorage.getItem("user");
-        if (!stored) return;
-
-        const { token } = JSON.parse(stored);
-
-        const API_URL = import.meta.env.VITE_API_URL || "https://kulfiwala.onrender.com";
-
-        const res = await fetch(`${API_URL}/api/orders/my`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) throw new Error("Failed to fetch orders");
-
-        const data = await res.json();
+        const { data } = await API.get("/api/orders/my");
         setOrders(data);
       } catch (error) {
         console.error("Failed to fetch orders", error);
       }
     };
-
     if (user) fetchOrders();
   }, [user]);
 
   const handleSave = async () => {
     try {
-      await updateUser(form);
+      const res = await updateMyProfile({ name: form.name, phone: form.phone });
+      updateUser({ name: res.data.name, phone: res.data.phone });
       setEditing(false);
       toast({ title: "Profile updated!" });
     } catch (error) {
@@ -65,6 +81,65 @@ const ProfilePage = () => {
     logout();
     toast({ title: "Logged out successfully" });
     navigate("/login");
+  };
+
+  const openAddDialog = () => {
+    setEditingAddressId(null);
+    setAddressForm(emptyAddressForm);
+    setAddressDialogOpen(true);
+  };
+
+  const openEditDialog = (addr: Address) => {
+    setEditingAddressId(addr._id);
+    setAddressForm({
+      label: addr.label,
+      line: addr.line,
+      city: addr.city,
+      state: addr.state || "",
+      pincode: addr.pincode || "",
+    });
+    setAddressDialogOpen(true);
+  };
+
+  const handleSaveAddress = async () => {
+    if (!addressForm.line || !addressForm.city) {
+      toast({ title: "Address line and city are required", variant: "destructive" });
+      return;
+    }
+    try {
+      let updatedAddresses: Address[];
+      if (editingAddressId) {
+        const res = await editAddress(editingAddressId, addressForm);
+        updatedAddresses = res.data;
+      } else {
+        const res = await addAddress(addressForm);
+        updatedAddresses = res.data;
+      }
+      updateUser({ addresses: updatedAddresses });
+      setAddressDialogOpen(false);
+      toast({ title: editingAddressId ? "Address updated" : "Address added" });
+    } catch (error) {
+      toast({ title: "Failed to save address", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteAddress = async (addressId: string) => {
+    try {
+      const res = await deleteAddress(addressId);
+      updateUser({ addresses: res.data });
+      toast({ title: "Address deleted" });
+    } catch (error) {
+      toast({ title: "Failed to delete address", variant: "destructive" });
+    }
+  };
+
+  const handleSetDefault = async (addr: Address) => {
+    try {
+      const res = await editAddress(addr._id, { isDefault: true });
+      updateUser({ addresses: res.data });
+    } catch (error) {
+      toast({ title: "Failed to set default", variant: "destructive" });
+    }
   };
 
   if (!user) return null;
@@ -113,10 +188,6 @@ const ProfilePage = () => {
                   <Label className="font-body text-sm font-semibold">Phone</Label>
                   <Input className="mt-1" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+91 98765 43210" />
                 </div>
-                <div>
-                  <Label className="font-body text-sm font-semibold">Address</Label>
-                  <Input className="mt-1" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Your delivery address" />
-                </div>
               </>
             ) : (
               <>
@@ -127,18 +198,11 @@ const ProfilePage = () => {
                     <p className="font-body font-semibold text-sm">{user.email}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 py-3 border-b border-border">
+                <div className="flex items-center gap-3 py-3">
                   <Phone className="h-4 w-4 text-primary shrink-0" />
                   <div>
                     <p className="text-xs text-muted-foreground font-body">Phone</p>
                     <p className="font-body font-semibold text-sm">{user.phone || "Not set"}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 py-3">
-                  <MapPin className="h-4 w-4 text-primary shrink-0" />
-                  <div>
-                    <p className="text-xs text-muted-foreground font-body">Address</p>
-                    <p className="font-body font-semibold text-sm">{user.address || "Not set"}</p>
                   </div>
                 </div>
               </>
@@ -146,11 +210,107 @@ const ProfilePage = () => {
           </div>
         </div>
 
+        {/* Saved Addresses */}
+        <div className="bg-card rounded-2xl p-6 shadow-card animate-fade-up mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-heading text-lg font-bold flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" /> Saved Addresses
+            </h2>
+            <Dialog open={addressDialogOpen} onOpenChange={setAddressDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" onClick={openAddDialog} className="font-body text-sm gap-1">
+                  <Plus className="h-3.5 w-3.5" /> Add
+                </Button>
+              </DialogTrigger>
+              <DialogContent aria-describedby="address-dialog-description">
+                <div className="p-6">
+                  <DialogHeader>
+                    <DialogTitle>{editingAddressId ? "Edit Address" : "Add Address"}</DialogTitle>
+                  </DialogHeader>
+                  <p id="address-dialog-description" className="sr-only">
+                    Enter the delivery address details below.
+                  </p>
+                  <div className="space-y-3 mt-4">
+                    <div>
+                      <Label className="text-sm font-semibold">Label</Label>
+                      <Input className="mt-1" value={addressForm.label} onChange={(e) => setAddressForm({ ...addressForm, label: e.target.value })} placeholder="Home / Work / Other" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold">Address Line</Label>
+                      <Input className="mt-1" value={addressForm.line} onChange={(e) => setAddressForm({ ...addressForm, line: e.target.value })} placeholder="House no, street, area" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold">City</Label>
+                      <Input className="mt-1" value={addressForm.city} onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-sm font-semibold">State</Label>
+                        <Input className="mt-1" value={addressForm.state} onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })} />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-semibold">Pincode</Label>
+                        <Input className="mt-1" value={addressForm.pincode} onChange={(e) => setAddressForm({ ...addressForm, pincode: e.target.value })} />
+                      </div>
+                    </div>
+                  </div>
+                  <Button onClick={handleSaveAddress} className="w-full mt-6">
+                    {editingAddressId ? "Save Changes" : "Add Address"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {(!user.addresses || user.addresses.length === 0) ? (
+            <p className="text-sm text-muted-foreground font-body">No saved addresses yet. Add one to speed up checkout.</p>
+          ) : (
+            <div className="space-y-3">
+              {user.addresses.map((addr) => (
+                <div key={addr._id} className="border border-border rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-heading font-bold text-sm flex items-center gap-2">
+                      {addr.label}
+                      {addr.isDefault && (
+                        <span className="text-xs font-body font-semibold text-secondary-foreground bg-secondary px-2 py-0.5 rounded-full">Default</span>
+                      )}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => openEditDialog(addr)} className="text-muted-foreground hover:text-primary">
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => handleDeleteAddress(addr._id)} className="text-muted-foreground hover:text-destructive">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-xs font-body text-muted-foreground">
+                    {addr.line}, {addr.city}{addr.state ? `, ${addr.state}` : ""} {addr.pincode}
+                  </p>
+                  {!addr.isDefault && (
+                    <button
+                      onClick={() => handleSetDefault(addr)}
+                      className="text-xs font-body font-semibold text-primary hover:underline flex items-center gap-1 mt-2"
+                    >
+                      <CheckCircle className="h-3 w-3" /> Set as default
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* My Orders */}
         <div className="bg-card rounded-2xl p-6 shadow-card animate-fade-up mt-6">
           <h2 className="font-heading text-lg font-bold mb-4 flex items-center gap-2">
             <Package className="h-5 w-5 text-primary" /> My Orders
           </h2>
+          {orders.length === 0 && (
+            <p className="text-sm text-muted-foreground font-body">
+              No orders yet. <Link to="/menu" className="text-primary font-semibold hover:underline">Browse the menu</Link>
+            </p>
+          )}
           {(() => {
             const statusColor: Record<string, string> = {
               Delivered: "bg-secondary text-secondary-foreground",
@@ -172,14 +332,12 @@ const ProfilePage = () => {
                     <p className="text-xs font-body text-muted-foreground">{order.items.map((i: any) => `${i.name} x${i.quantity}`).join(", ")}</p>
                     <div className="flex items-center justify-between mt-2">
                       <p className="text-sm font-heading font-bold text-primary">₹{order.totalAmount}</p>
-                      {order.status === "Delivered" && (
-                        <Link
-                          to={`/review?order=${order._id}`}
-                          className="text-xs font-body font-semibold text-primary hover:underline flex items-center gap-1"
+                      <Link
+                        to={`/review?order=${order._id}`}
+                        className="text-xs font-body font-semibold text-primary hover:underline flex items-center gap-1"
                         >
-                          <Star className="h-3 w-3" /> Rate Order
-                        </Link>
-                      )}
+                      <Star className="h-3 w-3" /> Rate Order
+                      </Link>
                     </div>
                   </div>
                 ))}

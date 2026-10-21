@@ -1,11 +1,22 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
+export interface Address {
+  _id: string;
+  label: string;
+  line: string;
+  city: string;
+  state?: string;
+  pincode?: string;
+  isDefault: boolean;
+}
+
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
   phone?: string;
   address?: string;
+  addresses?: Address[];
   avatar?: string;
   password?: string;
   createdAt: string;

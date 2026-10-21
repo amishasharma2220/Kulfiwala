@@ -31,10 +31,7 @@ const LoginPage = () => {
         password,
       });
 
-      // store user
-      localStorage.setItem("user", JSON.stringify(data));
-
-      // update global auth state
+      // store user + update global auth state
       login(data);
 
       toast({ title: `Welcome back, ${data?.name || "User"}!` });
